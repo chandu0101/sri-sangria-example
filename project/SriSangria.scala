@@ -53,7 +53,7 @@ object SriSangria extends Build {
 
   lazy val root =
     Project("root", file("."))
-      .aggregate(web, backend)
+      .aggregate(web, server)
 
   // Scala-Js web frontend
   lazy val web =
@@ -63,9 +63,9 @@ object SriSangria extends Build {
       .dependsOn(sharedJs)
 
   // Akka Http based backend
-  lazy val backend =
-    DefProject("backend", "backend")
-      .settings(backendModuleDeps)
+  lazy val server =
+    DefProject("server", "server")
+      .settings(serverModuleDeps)
       .dependsOn(sharedJvm)
 
 

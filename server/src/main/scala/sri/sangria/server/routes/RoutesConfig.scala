@@ -1,22 +1,24 @@
-package sri.sangria.backend.routes
+package sri.sangria.server.routes
 
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.http.scaladsl.model.HttpHeader
-import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.model.headers.{`Access-Control-Allow-Credentials`, `Access-Control-Allow-Headers`, `Access-Control-Max-Age`}
 import akka.http.scaladsl.server.Directives._
+import io.circe.{Json}
+import io.circe.parser._
+import io.circe.generic.auto._
+import sangria.marshalling.circe._
 import sangria.execution.Executor
 import sangria.introspection.introspectionQuery
-import sangria.marshalling.sprayJson._
 import sangria.parser.QueryParser
-import spray.json.{JsObject, JsString, JsValue, _}
-import sri.sangria.backend.schema.TodoSchema
-import sri.sangria.backend.services.{InMemoryTodoRepo, TodoRepo}
-import scala.concurrent.ExecutionContext.Implicits.global
+import sri.sangria.server.akkahttp2circe.AkkaHttpCirceSupport._
+import sri.sangria.server.exceptions.{QueryException, SriSangriaExceptionHandler, RequestException}
+import sri.sangria.server.schema.TodoSchema
+import sri.sangria.server.services.InMemoryTodoRepo
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success}
 
-object RoutesConfig extends CorsSupport {
+trait RoutesConfig extends CorsSupport with SriSangriaExceptionHandler {
 
   override val corsAllowOrigins: List[String] = List("*")
 
@@ -34,44 +36,46 @@ object RoutesConfig extends CorsSupport {
     schema = TodoSchema.schema,
     userContext = new InMemoryTodoRepo)
 
+  case class GraphQLInput(query: String, operation: Option[String], variables: Option[Json])
+
   val routes = cors {
     (post & path("graphql")) {
-      entity(as[JsValue]) { requestJson =>
-        val JsObject(fields) = requestJson
+      entity(as[Json]) { requestJson =>
 
-        val JsString(query) = fields("query")
+        val inputXor = requestJson.hcursor.as[GraphQLInput]
 
-        val operation = fields.get("operation") collect {
-          case JsString(op) => op
-        }
+        if (inputXor.isLeft) throw new RequestException("Input request is not valid")
 
-        val vars = fields.get("variables") match {
-          case Some(obj: JsObject) => obj
-          case Some(JsString(s)) => s.parseJson
-          case _ => JsObject.empty
-        }
+        val input = inputXor.getOrElse(null)
 
-        QueryParser.parse(query) match {
+        val vars = input.variables.map(v => {
+          v match {
+            case o: Json if (o.isObject) => o
+            case s: Json if (s.isString) => parse(s.asString.get).getOrElse(Json.obj())
+            case _ => Json.obj()
+          }
+        }).getOrElse(Json.obj())
+
+        QueryParser.parse(input.query) match {
 
           // query parsed successfully, time to execute it!
           case Success(queryAst) =>
             complete(executor.execute(queryAst,
-              operationName = operation,
+              operationName = input.operation,
               variables = vars))
 
           // can't parse GraphQL query, return error
           case Failure(error) =>
-            complete(BadRequest, JsObject("error" -> JsString(error.getMessage)))
+            throw new QueryException(error.getMessage)
         }
       }
     } ~
-      (path("introspect") & get) {
+      (path("introspect") & get) {  // get schema.json for relay apps
         complete(executor.execute(introspectionQuery) map { introspectedSchema =>
           val schemaFilePath = "../data/schema.json"
           val outFile = new java.io.FileWriter(schemaFilePath)
-          outFile.write(introspectedSchema.prettyPrint)
+          outFile.write(introspectedSchema.spaces2)
           outFile.close()
-
           "schema written successfully."
         })
       }

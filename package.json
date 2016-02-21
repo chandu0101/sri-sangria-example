@@ -9,7 +9,7 @@
   "devDependencies": {
     "babel": "5.8.21",
     "babel-loader": "5.3.2",
-    "babel-relay-plugin": "^0.6.3",
+    "babel-relay-plugin": "^0.7.0",
     "lodash": "^3.9.3",
     "webpack": "^1.9.10",
     "graphql": "^0.4.2",

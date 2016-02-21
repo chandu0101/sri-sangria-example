@@ -53,6 +53,7 @@ object TodoInput {
     }
 
     def onAdd() = {
+      println(s"on add locked")
       props.onSave(state.value)
     }
   }

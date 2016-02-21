@@ -1,4 +1,4 @@
-package sri.sangria.backend.model
+package sri.sangria.server.models
 
 import sangria.relay.Node
 

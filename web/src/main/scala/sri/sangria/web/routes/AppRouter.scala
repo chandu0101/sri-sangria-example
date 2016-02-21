@@ -20,6 +20,7 @@ object AppRouter {
   object TodosPage extends WebStaticPage
 
   object config extends WebRouterConfig {
+
     override val history: History = HistoryFactory.browserHistory()
 
     override val initialRoute: (WebStaticPage, WebRoute) = defineInitialRoute(HomePage, HomeScreen())

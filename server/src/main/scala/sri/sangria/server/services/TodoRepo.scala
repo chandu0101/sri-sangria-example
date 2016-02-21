@@ -1,6 +1,6 @@
-package sri.sangria.backend.services
+package sri.sangria.server.services
 
-import sri.sangria.backend.model.{Todo, User}
+import sri.sangria.server.models.{Todo, User}
 
 trait TodoRepo {
 

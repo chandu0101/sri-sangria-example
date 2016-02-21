@@ -4,46 +4,57 @@ import sbt._
 
 object Dependencies {
 
-  val scalaAsyncVersion = "0.9.2"
+  object Version {
 
-  val upickleVersion = "0.3.1"
+    val scalaAsync = "0.9.2"
 
-  val scalatestVersion = "3.0.0-M6"
+    val scalatest = "3.0.0-M6"
 
-  val sangriaRelayVersion = "0.5.1"
+    val sangriaRelay = "0.5.1"
 
-  val sangriaSprayJsonVersion = "0.1.0"
+    val sangriaSprayJson = "0.1.0"
 
-  val akkHttpVersion = "2.0"
+    val sangriaCirce = "0.2.0"
 
-  val sriVersion = "0.4.0-SNAPSHOT"
+    val akkHttp = "2.0"
 
-  val reactiveMongoVersion = "0.11.9"
+    val sri = "0.4.0-SNAPSHOT"
+
+    val reactiveMongo = "0.11.9"
+
+    val circe = "0.3.0"
+  }
 
 
-  val scalatestJS = libraryDependencies += "org.scalatest" %%% "scalatest" % scalatestVersion % Test
+  val scalatestJS = libraryDependencies += "org.scalatest" %%% "scalatest" % Version.scalatest % Test
 
-  val scalaAsync = libraryDependencies += "org.scala-lang.modules" %% "scala-async" % scalaAsyncVersion
+  val scalaAsync = libraryDependencies += "org.scala-lang.modules" %% "scala-async" % Version.scalaAsync
 
-  val scalaJSUpickle = libraryDependencies += "com.lihaoyi" %%% "upickle" % upickleVersion
+  val sriUniversal = libraryDependencies += "com.github.chandu0101.sri" %%% "universal" % Version.sri
 
-  val sriUniversal = libraryDependencies += "com.github.chandu0101.sri" %%% "universal" % sriVersion
+  val sriMobile = libraryDependencies += "com.github.chandu0101.sri" %%% "mobile" % Version.sri
 
-  val sriMobile = libraryDependencies += "com.github.chandu0101.sri" %%% "mobile" % sriVersion
+  val sriWeb = libraryDependencies += "com.github.chandu0101.sri" %%% "web" % Version.sri
 
-  val sriWeb = libraryDependencies += "com.github.chandu0101.sri" %%% "web" % sriVersion
+  val sriRelay = libraryDependencies += "com.github.chandu0101.sri" %%% "relay" % Version.sri
 
-  val sriRelay = libraryDependencies += "com.github.chandu0101.sri" %%% "relay" % sriVersion
+  val sangriaRelay = libraryDependencies += "org.sangria-graphql" %% "sangria-relay" % Version.sangriaRelay
 
-  val sangriaRelay = libraryDependencies += "org.sangria-graphql" %% "sangria-relay" % sangriaRelayVersion
+  val sangriaSprayJson = libraryDependencies += "org.sangria-graphql" %% "sangria-spray-json" % Version.sangriaSprayJson
 
-  val sangriaSprayJson = libraryDependencies += "org.sangria-graphql" %% "sangria-spray-json" % sangriaSprayJsonVersion
+  val sangriaCirceJson = libraryDependencies += "org.sangria-graphql" %% "sangria-circe" % Version.sangriaCirce
 
-  val akkaHttp = libraryDependencies += "com.typesafe.akka" %% "akka-http-experimental" % akkHttpVersion
+  val akkaHttp = libraryDependencies += "com.typesafe.akka" %% "akka-http-experimental" % Version.akkHttp
 
-  val akkaHttpSprayJson = libraryDependencies += "com.typesafe.akka" %% "akka-http-spray-json-experimental" % akkHttpVersion
+  val akkaHttpSprayJson = libraryDependencies += "com.typesafe.akka" %% "akka-http-spray-json-experimental" % Version.akkHttp
 
-  val reactiveMongo = libraryDependencies += "org.reactivemongo" %% "reactivemongo" % reactiveMongoVersion
+  val circeCore = libraryDependencies += "io.circe" %%% "circe-core" % Version.circe
+
+  val circeGeneric = libraryDependencies += "io.circe" %%% "circe-generic" % Version.circe
+
+  val circeParseJS = libraryDependencies += "io.circe" %%% "circe-parser" % Version.circe
+
+  val circeParseJVM = libraryDependencies += "io.circe" %% "circe-parser" % Version.circe
 
 
   val universalModuleDeps = Seq(
@@ -51,10 +62,10 @@ object Dependencies {
     scalaAsync
   )
 
-  val backendModuleDeps = Seq(sangriaRelay,
-    sangriaSprayJson,
-    akkaHttp,
-    akkaHttpSprayJson)
+  val serverModuleDeps = Seq(sangriaRelay,
+    sangriaCirceJson,
+    circeParseJVM,
+    akkaHttp)
 
   val webModuleDeps = Seq(
     sriWeb,

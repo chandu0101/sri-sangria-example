@@ -38,7 +38,7 @@ object TodosContainer {
         """
           |fragment on User {
           |  id,
-          |  todos(first : 1000) {
+          |  todos(first : 10) {
           |    edges {
           |      node {
           |       id,

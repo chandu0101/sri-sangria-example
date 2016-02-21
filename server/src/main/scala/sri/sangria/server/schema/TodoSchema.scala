@@ -1,10 +1,12 @@
-package sri.sangria.backend.schema
+package sri.sangria.server.schema
 
 import sangria.relay._
 import sangria.schema._
-import sri.sangria.backend.model.{Todo, User}
-import sri.sangria.backend.services.TodoRepo
-
+import sri.sangria.server
+import sri.sangria.server.models.{AddTodoInput, Todo, User}
+import sri.sangria.server.services.TodoRepo
+import sangria.marshalling.circe._
+import io.circe.generic.auto._
 
 object TodoSchema {
 
@@ -62,7 +64,7 @@ object TodoSchema {
   case class AddTodoMutationPayload(clientMutationId: String, todoId: String) extends Mutation
 
 
-  val addTodoMutation = Mutation.fieldWithClientMutationId[TodoRepo, Unit, AddTodoMutationPayload, InputObjectType.DefaultInput](
+  val addTodoMutation = Mutation.fieldWithClientMutationId[TodoRepo, Unit, AddTodoMutationPayload, io.circe.Json](
     fieldName = "addTodo",
     typeName = "AddTodo",
     inputFields = List(
@@ -72,10 +74,9 @@ object TodoSchema {
       Field("viewer", OptionType(UserType), resolve = _.ctx.getUser())
     ),
     mutateAndGetPayload = (input, ctx) ⇒ {
-      val mutationId = input(Mutation.ClientMutationIdFieldName).asInstanceOf[String]
-      val text = input("text").asInstanceOf[String]
-      val newTodo = ctx.ctx.addTodo(text)
-      AddTodoMutationPayload(mutationId, newTodo.id)
+      val addTodoInput = input.hcursor.as[AddTodoInput].getOrElse(null)
+      val newTodo = ctx.ctx.addTodo(addTodoInput.text)
+      AddTodoMutationPayload(addTodoInput.clientMutationId.get, newTodo.id)
     }
   )
 

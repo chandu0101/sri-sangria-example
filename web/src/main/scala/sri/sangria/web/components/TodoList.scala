@@ -30,10 +30,9 @@ object TodoList {
         renderSeparator = renderSeparator _)()
     }
 
-    def renderRow(row: TodoJS, sectionId: String, rowId: String) = {
+    def renderRow(row: TodoJS, sectionId: String, rowId: String,highlightRow: js.Function2[String,String,_]) = {
       View(style = styles.cell, key = rowId)(Text(style = Theme.bigText)(row.text))
     }
-
 
     def renderSeparator(sectionID: String, rowID: String, adjacentRowHighlighted: Boolean) = {
       View(style = styles.cellBorder, key = rowID)()

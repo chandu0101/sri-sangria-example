@@ -1,4 +1,4 @@
-package sri.sangria.backend.routes
+package sri.sangria.server.routes
 
 import akka.http.scaladsl.model.HttpHeader
 import akka.http.scaladsl.model.HttpMethods._

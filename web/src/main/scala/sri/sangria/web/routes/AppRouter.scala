@@ -4,7 +4,7 @@ import sri.core.ReactElement
 import sri.relay.container.RelayRootContainer
 import sri.relay.tools.ComponentFetchState
 import sri.sangria.web.components.{LoadingIndicator, Footer, TopNav, HomeScreen}
-import sri.sangria.web.containers.TodosContainer
+import sri.sangria.web.containers.TodosScreenContainer
 import sri.sangria.web.model.SangriaViewer
 import sri.sangria.web.queries.ViewerQuery
 import sri.universal.components.View
@@ -25,7 +25,7 @@ object AppRouter {
 
     override val initialRoute: (WebStaticPage, WebRoute) = defineInitialRoute(HomePage, HomeScreen())
 
-    staticRoute(TodosPage, "todos", RelayRootContainer(Component = TodosContainer.container, query = ViewerQuery(), renderLoading = () => LoadingIndicator()))
+    staticRoute(TodosPage, "todos", RelayRootContainer(Component = TodosScreenContainer.container, query = ViewerQuery(), renderLoading = () => LoadingIndicator()))
 
     override def renderScene(route: WebRoute): ReactElement = {
       View(style = WebStyleSheet.wholeContainer)(

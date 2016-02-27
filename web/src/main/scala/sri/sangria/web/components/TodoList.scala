@@ -23,7 +23,6 @@ object TodoList {
     initialState(State())
 
     def render() = {
-      println(s"items : ${props.items}")
       val ds = state.ds.cloneWithRows(props.items)
       ListView(dataSource = ds,
         renderRow = renderRow _,

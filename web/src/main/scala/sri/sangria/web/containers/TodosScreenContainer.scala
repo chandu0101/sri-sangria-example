@@ -1,30 +1,49 @@
 package sri.sangria.web.containers
 
-import sri.core._
-import sri.relay.{RelayComponentProps, RelayComponent, Relay}
-import sri.relay.container.RelayContainer.Fragments
+import sri.relay.RelayElementFactory._
 import sri.relay.container.RelayContainer.Fragments
 import sri.relay.container.{Fragments, RelayContainerSpec}
 import sri.relay.query.RelayQL
-import sri.sangria.web.components.TodosScreen
+import sri.relay.{Relay, RelayComponent, RelayComponentProps}
+import sri.sangria.web.components.{TodoList, TodoInput}
 import sri.sangria.web.model.SangriaViewer
-import sri.universal.components._
-import sri.web.all._
-import sri.relay.RelayElementFactory._
+import sri.sangria.web.mutations.AddTodoMutation
+import sri.universal.components.View
+import sri.web.styles.WebStyleSheet
+
 import scala.scalajs.js
+import scala.scalajs.js.Dynamic.{literal => json}
 import scala.scalajs.js.annotation.ScalaJSDefined
-import scala.scalajs.js.{UndefOr => U, undefined => undefined}
 
 
-object TodosContainer {
+object TodosScreenContainer {
 
 
   @ScalaJSDefined
   class Component extends RelayComponent[Props, Unit] {
     def render() = {
-
-      TodosScreen(props.viewer, props.relay)
+      View(style = styles.container)(
+        View(style = styles.todos)(
+          TodoInput(onSave = onAddClick _),
+          TodoList(props.viewer.todos.edges.map(_.node))
+        )
+      )
     }
+
+    def onAddClick(text: String) = {
+      Relay.Store.commitUpdate(new AddTodoMutation(json(viewer = props.viewer, text = text)))
+    }
+
+  }
+
+  object styles extends WebStyleSheet {
+
+    val container = style(flex := 1, padding := 40, alignItems.center)
+
+    val todos = style(flex := 1,
+      padding := 30,
+      width := 600,
+      boxShadow := "0 2px 4px grey")
   }
 
   @ScalaJSDefined
@@ -38,7 +57,7 @@ object TodosContainer {
         """
           |fragment on User {
           |  id,
-          |  todos(first : 10) {
+          |  todos(first : 100) {
           |    edges {
           |      node {
           |       id,

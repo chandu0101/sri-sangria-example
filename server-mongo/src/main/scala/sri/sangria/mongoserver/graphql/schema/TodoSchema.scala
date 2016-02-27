@@ -1,14 +1,14 @@
-package sri.sangria.server.schema
+package sri.sangria.mongoserver.graphql.schema
 
 import sangria.relay._
 import sangria.schema._
-import sri.sangria.server
-import sri.sangria.server.models.{AddTodoInput, Todo, User}
-import sri.sangria.server.services.TodoRepo
+import sri.sangria.mongoserver.exceptions.MutationException
+import sri.sangria.mongoserver.graphql.TodoRepo
+import sri.sangria.mongoserver.util.CirceUtils
+import sri.sangria.mongoserver.models.{AddTodoInput, Todo, User}
 import sangria.marshalling.circe._
 import io.circe.generic.auto._
 import scala.concurrent.ExecutionContext.Implicits.global
-
 
 
 object TodoSchema {
@@ -43,7 +43,7 @@ object TodoSchema {
     )
   )
 
-  val ConnectionDefinition(todoEdge, todoConnection) = Connection.definition[TodoRepo, Connection, Option[Todo]]("Todo", OptionType(TodoType))
+  val ConnectionDefinition(todoEdge, todoConnection) = Connection.definition[TodoRepo, Connection, Todo]("Todo", TodoType)
 
 
   val UserType: ObjectType[TodoRepo, User] = ObjectType(
@@ -54,7 +54,7 @@ object TodoSchema {
       Node.globalIdField[TodoRepo, User],
       Field("todos", todoConnection,
         arguments = Connection.Args.All,
-        resolve = ctx => Connection.connectionFromFutureSeq(ctx.ctx.getTodos(ctx.value.todos,ctx.args), ConnectionArgs(ctx))
+        resolve = ctx => ctx.ctx.getTodos(ctx)
       )
     )
   )
@@ -73,13 +73,13 @@ object TodoSchema {
     inputFields = List(
       InputField("text", StringType)),
     outputFields = fields(
-      Field("todoEdge", todoEdge, resolve = ctx ⇒ Edge(ctx.ctx.getTodo(ctx.value.todoId), ctx.value.todoId)),
+      Field("todoEdge", todoEdge, resolve = ctx ⇒ Edge(ctx.ctx.getTodo(ctx.value.todoId).getOrElse(null), ctx.value.todoId)),
       Field("viewer", OptionType(UserType), resolve = _.ctx.getUser())
     ),
     mutateAndGetPayload = (input, ctx) ⇒ {
-      val addTodoInput = input.hcursor.as[AddTodoInput].getOrElse(null)
-      val newTodo = ctx.ctx.addTodo(addTodoInput.text)
-      AddTodoMutationPayload(addTodoInput.clientMutationId.get, newTodo.id)
+      val inputXor = input.as[AddTodoInput]
+      val addTodoInput = inputXor.getOrElse(throw new MutationException(s"Error decoding mutation input : ${CirceUtils.getCirceErrorMessage(inputXor)}"))
+      ctx.ctx.addTodo(addTodoInput.text).map(newTodo => AddTodoMutationPayload(addTodoInput.clientMutationId.get, newTodo))
     }
   )
 

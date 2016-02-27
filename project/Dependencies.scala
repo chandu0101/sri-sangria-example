@@ -18,7 +18,7 @@ object Dependencies {
 
     val akkHttp = "2.0"
 
-    val sri = "0.4.0-SNAPSHOT"
+    val sri = "0.4.0"
 
     val reactiveMongo = "0.11.9"
 
@@ -56,6 +56,8 @@ object Dependencies {
 
   val circeParseJVM = libraryDependencies += "io.circe" %% "circe-parser" % Version.circe
 
+  val reactiveMongo = libraryDependencies += "org.reactivemongo" %% "reactivemongo" % Version.reactiveMongo
+
 
   val universalModuleDeps = Seq(
     sriUniversal,
@@ -65,6 +67,12 @@ object Dependencies {
   val serverModuleDeps = Seq(sangriaRelay,
     sangriaCirceJson,
     circeParseJVM,
+    akkaHttp)
+
+  val mongoServerModuleDeps = Seq(sangriaRelay,
+    sangriaCirceJson,
+    circeParseJVM,
+    reactiveMongo,
     akkaHttp)
 
   val webModuleDeps = Seq(

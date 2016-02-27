@@ -53,7 +53,7 @@ object SriSangria extends Build {
 
   lazy val root =
     Project("root", file("."))
-      .aggregate(web, server)
+      .aggregate(web, shared.js, shared.jvm, server, serverMongo)
 
   // Scala-Js web frontend
   lazy val web =
@@ -66,6 +66,12 @@ object SriSangria extends Build {
   lazy val server =
     DefProject("server", "server")
       .settings(serverModuleDeps)
+      .dependsOn(sharedJvm)
+
+  // Akka Http based backend , mongo as DB
+  lazy val serverMongo =
+    DefProject("server-mongo", "server-mongo")
+      .settings(mongoServerModuleDeps)
       .dependsOn(sharedJvm)
 
 

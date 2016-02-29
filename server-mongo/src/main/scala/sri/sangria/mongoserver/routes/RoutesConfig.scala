@@ -82,6 +82,9 @@ trait RoutesConfig extends CorsSupport with RouteExceptionHandler {
           outFile.close()
           "schema written successfully."
         })
+      } ~
+      (get & path("graphiql")) { // graphiql editor
+        getFromResource("web/graphiql.html")
       }
   }
 

@@ -78,6 +78,9 @@ trait RoutesConfig extends CorsSupport with SriSangriaExceptionHandler {
           outFile.close()
           "schema written successfully."
         })
+      } ~
+      (get & path("graphiql")) { // graphiql editor
+        getFromResource("web/graphiql.html")
       }
   }
 

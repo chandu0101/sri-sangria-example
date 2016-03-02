@@ -17,7 +17,9 @@ package object exceptions {
     }
   }
 
-  def getErrorJson(ex: BaseException) = AppError(errorScope = ex.name, errorDetails = ex.msg).asJson
+  def getAppError(ex : BaseException) = AppError(errorScope = ex.name, errorDetails = ex.msg)
+  
+  def getErrorJson(ex: BaseException) = getAppError(ex).asJson
 
   def getErrorString(ex: BaseException) = getErrorJson(ex).noSpaces
 }

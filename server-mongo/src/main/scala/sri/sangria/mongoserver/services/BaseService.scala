@@ -9,7 +9,7 @@ import sangria.relay._
 import io.circe.generic.auto._
 import sri.sangria.mongoserver.exceptions.DatabaseException
 import sri.sangria.mongoserver.mongo2circe.BsonJsonReaderWriter
-import sri.sangria.mongoserver.util.{CirceUtils, FutureUtils}
+import sri.sangria.mongoserver.util.{CirceUtils}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -23,17 +23,6 @@ class BaseService[T](db: => DefaultDB, collectionName: String)(implicit encoder:
    * @return
    */
   def insert(entity: T): Future[WriteResult] = collection.insert(encoder(entity))
-
-  case class Foo(x: Int)
-
-  //  def flatten(result: Future[Option[Json]]): Future[Option[Foo]] = {
-  //    result.flatMap(
-  //      s => s.traverseU(v => v.as[Foo]).fold(
-  //        e => Future.failed(new Exception(s"Whatever${e}")),
-  //        Future.successful
-  //      )
-  //    )
-  //  }
 
   /**
    * find the document based on id
@@ -65,47 +54,48 @@ class BaseService[T](db: => DefaultDB, collectionName: String)(implicit encoder:
 
     def getOffset(cursor: Option[String], default: Int) = cursor flatMap (Connection.cursorToOffset) getOrElse (default)
 
-    val size = FutureUtils.awaitFuture(count(selector))
+    count(selector).flatMap(size => {
 
-    val beforeOffset = getOffset(before, size)
-    val afterOffset = getOffset(after, -1)
+      val beforeOffset = getOffset(before, size)
+      val afterOffset = getOffset(after, -1)
 
-    val startOffsetTemp = Math.max(-1, afterOffset) + 1
-    val endOffsetTemp = Math.min(size, beforeOffset)
+      val startOffsetTemp = Math.max(-1, afterOffset) + 1
+      val endOffsetTemp = Math.min(size, beforeOffset)
 
-    val endOffset = first.fold(endOffsetTemp)(f => Math.min(endOffsetTemp, startOffsetTemp + f))
-    val startOffset = last.fold(startOffsetTemp)(l => Math.max(startOffsetTemp, endOffset - l))
+      val endOffset = first.fold(endOffsetTemp)(f => Math.min(endOffsetTemp, startOffsetTemp + f))
+      val startOffset = last.fold(startOffsetTemp)(l => Math.max(startOffsetTemp, endOffset - l))
 
-    val skip = Math.max(startOffset, 0)
-    val limit = endOffset - startOffset
+      val skip = Math.max(startOffset, 0)
+      val limit = endOffset - startOffset
 
-    val result: Future[Vector[T]] = if (limit == 0) Future.successful(Vector())
-    else collection.find(selector).options(QueryOpts().skip(skip)).sort(sort).cursor().collect[Vector](limit).map(v => {
-      val vtXor = Json.array(v: _*).hcursor.as[Vector[T]]
-      vtXor.getOrElse(throw new DatabaseException(s"Error decoding entities list : ${CirceUtils.getCirceErrorMessage(vtXor)}"))
-    })
+      val result: Future[Vector[T]] = if (limit == 0) Future.successful(Vector())
+      else collection.find(selector).options(QueryOpts().skip(skip)).sort(sort).cursor().collect[Vector](limit).map(v => {
+        val vtXor = Json.array(v: _*).hcursor.as[Vector[T]]
+        vtXor.getOrElse(throw new DatabaseException(s"Error decoding entities list : ${CirceUtils.getCirceErrorMessage(vtXor)}"))
+      })
 
-    result.map(
-      nodes => {
-        val edges = nodes.zipWithIndex.map {
-          case (value, index) => Edge(value, Connection.offsetToCursor(startOffset + index))
+      result.map(
+        nodes => {
+          val edges = nodes.zipWithIndex.map {
+            case (value, index) => Edge(value, Connection.offsetToCursor(startOffset + index))
+          }
+
+          val firstEdge = edges.headOption
+          val lastEdge = edges.lastOption
+          val lowerBound = after.fold(0)(_ ⇒ afterOffset + 1)
+          val upperBound = before.fold(size)(_ ⇒ beforeOffset)
+
+          DefaultConnection(
+            PageInfo(
+              startCursor = firstEdge map (_.cursor),
+              endCursor = lastEdge map (_.cursor),
+              hasPreviousPage = last.fold(false)(_ ⇒ startOffset > lowerBound),
+              hasNextPage = first.fold(false)(_ ⇒ endOffset < upperBound)),
+            edges
+          )
         }
-
-        val firstEdge = edges.headOption
-        val lastEdge = edges.lastOption
-        val lowerBound = after.fold(0)(_ ⇒ afterOffset + 1)
-        val upperBound = before.fold(size)(_ ⇒ beforeOffset)
-
-        DefaultConnection(
-          PageInfo(
-            startCursor = firstEdge map (_.cursor),
-            endCursor = lastEdge map (_.cursor),
-            hasPreviousPage = last.fold(false)(_ ⇒ startOffset > lowerBound),
-            hasNextPage = first.fold(false)(_ ⇒ endOffset < upperBound)),
-          edges
-        )
-      }
-    )
+      )
+    })
   }
 
 

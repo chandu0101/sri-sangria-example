@@ -10,11 +10,11 @@ object Dependencies {
 
     val scalatest = "3.0.0-M6"
 
-    val sangriaRelay = "0.5.1"
+    val sangriaRelay = "0.5.2"
 
     val sangriaSprayJson = "0.1.0"
 
-    val sangriaCirce = "0.2.0"
+    val sangriaCirce = "0.3.1"
 
     val akkHttp = "2.0"
 

@@ -7,6 +7,7 @@ import io.circe.generic.auto._
 
 package object exceptions {
 
+  //TODO rework
   val sangriaExceptionHandler: PartialFunction[(ResultMarshaller, Throwable), HandledException] = {
     case (m, e: Exception) => e match {
       case qex: QueryException => HandledException(getErrorString(qex))

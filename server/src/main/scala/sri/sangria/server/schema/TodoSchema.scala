@@ -10,7 +10,6 @@ import io.circe.generic.auto._
 import scala.concurrent.ExecutionContext.Implicits.global
 
 
-
 object TodoSchema {
 
   /**
@@ -54,7 +53,7 @@ object TodoSchema {
       Node.globalIdField[TodoRepo, User],
       Field("todos", todoConnection,
         arguments = Connection.Args.All,
-        resolve = ctx => Connection.connectionFromFutureSeq(ctx.ctx.getTodos(ctx.value.todos,ctx.args), ConnectionArgs(ctx))
+        resolve = ctx => Connection.connectionFromFutureSeq(ctx.ctx.getTodos(ctx.value.todos, ctx.args), ConnectionArgs(ctx))
       )
     )
   )
@@ -67,7 +66,7 @@ object TodoSchema {
   case class AddTodoMutationPayload(clientMutationId: String, todoId: String) extends Mutation
 
 
-  val addTodoMutation = Mutation.fieldWithClientMutationId[TodoRepo, Unit, AddTodoMutationPayload, io.circe.Json](
+  val addTodoMutation = Mutation.fieldWithClientMutationId[TodoRepo, Unit, AddTodoMutationPayload, AddTodoInput](
     fieldName = "addTodo",
     typeName = "AddTodo",
     inputFields = List(
@@ -77,9 +76,8 @@ object TodoSchema {
       Field("viewer", OptionType(UserType), resolve = _.ctx.getUser())
     ),
     mutateAndGetPayload = (input, ctx) ⇒ {
-      val addTodoInput = input.hcursor.as[AddTodoInput].getOrElse(null)
-      val newTodo = ctx.ctx.addTodo(addTodoInput.text)
-      AddTodoMutationPayload(addTodoInput.clientMutationId.get, newTodo.id)
+      val newTodo = ctx.ctx.addTodo(input.text)
+      AddTodoMutationPayload(input.clientMutationId.get, newTodo.id)
     }
   )
 

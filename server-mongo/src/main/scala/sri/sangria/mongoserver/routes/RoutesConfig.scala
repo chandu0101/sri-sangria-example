@@ -9,13 +9,14 @@ import io.circe.generic.auto._
 import sangria.marshalling.circe._
 import sangria.execution.Executor
 import sangria.introspection.introspectionQuery
-import sangria.parser.QueryParser
+import sangria.parser.{SyntaxError, QueryParser}
 import sri.sangria.mongoserver.akkahttp2circe.AkkaHttpCirceSupport._
 import sri.sangria.mongoserver.exceptions
 import sri.sangria.mongoserver.exceptions.{QueryException, RouteExceptionHandler, RequestException}
 import sri.sangria.mongoserver.graphql.TodoRepo
 import sri.sangria.mongoserver.graphql.schema.TodoSchema
 import sri.sangria.mongoserver.services.{TodoService}
+import sri.sangria.mongoserver.util.CirceUtils
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success}
@@ -45,11 +46,9 @@ trait RoutesConfig extends CorsSupport with RouteExceptionHandler {
     (post & path("graphql")) {
       entity(as[Json]) { requestJson =>
 
-        val inputXor = requestJson.hcursor.as[GraphQLInput]
+        val inputXor = requestJson.as[GraphQLInput]
 
-        if (inputXor.isLeft) throw new RequestException("Input request is not valid")
-
-        val input = inputXor.getOrElse(null)
+        val input = inputXor.getOrElse(throw new RequestException(s"Input request is not valid : ${CirceUtils.getCirceErrorMessage(inputXor)}"))
 
         val vars = input.variables.map(v => {
           v match {
@@ -68,8 +67,14 @@ trait RoutesConfig extends CorsSupport with RouteExceptionHandler {
               variables = vars))
 
           // can't parse GraphQL query, return error
-          case Failure(error) =>
-            throw new QueryException(error.getMessage)
+          case Failure(error : SyntaxError) =>
+            throw new QueryException(Json.obj(
+              "syntaxError" -> Json.string(error.getMessage),
+              "locations" -> Json.array(Json.obj(
+                "line" -> Json.int(error.originalError.position.line),
+                "column" -> Json.int(error.originalError.position.column)))).noSpaces)
+
+          case Failure(error) =>  throw new QueryException(error.getMessage)
         }
       }
     } ~
@@ -83,7 +88,8 @@ trait RoutesConfig extends CorsSupport with RouteExceptionHandler {
           "schema written successfully."
         })
       } ~
-      (get & path("graphiql")) { // graphiql editor
+      (get & path("graphiql")) {
+        // graphiql editor
         getFromResource("web/graphiql.html")
       }
   }

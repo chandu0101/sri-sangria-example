@@ -67,19 +67,17 @@ object TodoSchema {
   case class AddTodoMutationPayload(clientMutationId: String, todoId: String) extends Mutation
 
 
-  val addTodoMutation = Mutation.fieldWithClientMutationId[TodoRepo, Unit, AddTodoMutationPayload, io.circe.Json](
+  val addTodoMutation = Mutation.fieldWithClientMutationId[TodoRepo, Unit, AddTodoMutationPayload, AddTodoInput](
     fieldName = "addTodo",
     typeName = "AddTodo",
     inputFields = List(
       InputField("text", StringType)),
     outputFields = fields(
-      Field("todoEdge", todoEdge, resolve = ctx ⇒ Edge(ctx.ctx.getTodo(ctx.value.todoId).getOrElse(null), ctx.value.todoId)),
+      Field("todoEdge", todoEdge, resolve = ctx ⇒ ctx.ctx.getTodo(ctx.value.todoId).map(ot => Edge(ot.getOrElse(null), ctx.value.todoId))) ,
       Field("viewer", OptionType(UserType), resolve = _.ctx.getUser())
     ),
     mutateAndGetPayload = (input, ctx) ⇒ {
-      val inputXor = input.as[AddTodoInput]
-      val addTodoInput = inputXor.getOrElse(throw new MutationException(s"Error decoding mutation input : ${CirceUtils.getCirceErrorMessage(inputXor)}"))
-      ctx.ctx.addTodo(addTodoInput.text).map(newTodo => AddTodoMutationPayload(addTodoInput.clientMutationId.get, newTodo))
+      ctx.ctx.addTodo(input.text).map(newTodo => AddTodoMutationPayload(input.clientMutationId.get, newTodo))
     }
   )
 

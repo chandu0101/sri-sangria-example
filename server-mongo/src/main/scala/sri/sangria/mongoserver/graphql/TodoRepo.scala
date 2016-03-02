@@ -19,7 +19,7 @@ class TodoRepo {
 
   def getTodos(args: WithArguments): Future[Connection[Todo]] = todoService.getTodos(args)
 
-  def getTodo(id: String): Option[Todo] = todoService.getTodo(BSONObjectID(id))
+  def getTodo(id: String): Future[Option[Todo]] = todoService.getTodo(BSONObjectID(id))
 
 
 }

@@ -35,7 +35,7 @@ npm run schema-fetch // it will fetch schema.json file from server
 
 ```
       
-*** Web Client*** : 
+***Web Client*** :
       
 ```
 sbt ~fastOptJS
@@ -52,7 +52,7 @@ npm start
 
 ```
       
-*** Mobile Client*** :
+***Mobile Client*** :
       
 
 https://github.com/chandu0101/sri-mobile-template#how-to-run

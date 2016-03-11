@@ -5,6 +5,10 @@ An example app written using [sangria-graphql](http://sangria-graphql.org/) (bac
 
 ![demo](sri-sangria.png)
 
+![mobiledemo](mobilehome.png)
+
+![mobiletodos](iostodos.png)
+
 ### How to Run
 
 
@@ -31,7 +35,7 @@ npm run schema-fetch // it will fetch schema.json file from server
 
 ```
       
-***Client*** : 
+*** Web Client*** : 
       
 ```
 sbt ~fastOptJS
@@ -48,3 +52,7 @@ npm start
 
 ```
       
+*** Mobile Client*** :
+      
+
+https://github.com/chandu0101/sri-mobile-template#how-to-run

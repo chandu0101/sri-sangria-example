@@ -53,13 +53,21 @@ object SriSangria extends Build {
 
   lazy val root =
     Project("root", file("."))
-      .aggregate(web, shared.js, shared.jvm, server, serverMongo)
+      .aggregate(web,mobile, shared.js, shared.jvm, server, serverMongo)
 
   // Scala-Js web frontend
   lazy val web =
     DefJSProject("web", "web")
       .settings(webModuleDeps)
       .settings(webLauncher)
+      .dependsOn(sharedJs)
+
+  // Scala-Js mobile client
+  lazy val mobile =
+    DefJSProject("mobile", "mobile")
+      .settings(mobileModuleDeps)
+      .settings(mobileLauncherFast)
+      .settings(mobileLauncherFull)
       .dependsOn(sharedJs)
 
   // Akka Http based backend

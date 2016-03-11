@@ -81,7 +81,8 @@ object Dependencies {
   )
 
   val mobileModuleDeps = Seq(
-    sriMobile
+    sriMobile,
+    sriRelay
   )
 
 }

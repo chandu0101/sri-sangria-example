@@ -44,3 +44,11 @@ web-examples/node_modules/
 #relay-web-examples
 relay-web-examples/assets/
 relay-web-examples/node_modules/
+
+#mobile
+mobile/index.ios.js
+mobile/index.android.js
+mobile/android/.gradle
+mobile/android/build
+mobile/ios/build
+mobile/android/app/build

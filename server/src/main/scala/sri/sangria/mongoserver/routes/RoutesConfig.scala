@@ -1,13 +1,14 @@
 package sri.sangria.mongoserver.routes
 
 import akka.http.scaladsl.model.HttpHeader
+import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.model.headers.{`Access-Control-Allow-Credentials`, `Access-Control-Allow-Headers`, `Access-Control-Max-Age`}
 import akka.http.scaladsl.server.Directives._
 import io.circe.{Json}
 import io.circe.parser._
 import io.circe.generic.auto._
 import sangria.marshalling.circe._
-import sangria.execution.Executor
+import sangria.execution.{ErrorWithResolver, QueryAnalysisError, Executor}
 import sangria.introspection.introspectionQuery
 import sangria.parser.{SyntaxError, QueryParser}
 import sri.sangria.mongoserver.akkahttp2circe.AkkaHttpCirceSupport._
@@ -37,8 +38,9 @@ trait RoutesConfig extends CorsSupport with RouteExceptionHandler {
 
   val executor = Executor(
     schema = TodoSchema.schema,
-    exceptionHandler = exceptions.sangriaExceptionHandler,
-    userContext = new TodoRepo)
+    exceptionHandler = exceptions.sangriaExceptionHandler)
+
+  val userContext = new TodoRepo
 
   case class GraphQLInput(query: String, operation: Option[String], variables: Option[Json])
 
@@ -62,25 +64,30 @@ trait RoutesConfig extends CorsSupport with RouteExceptionHandler {
 
           // query parsed successfully, time to execute it!
           case Success(queryAst) =>
-            complete(executor.execute(queryAst,
-              operationName = input.operation,
-              variables = vars))
+            complete(executor.execute(queryAst, userContext = userContext, root = (),
+              variables = vars,
+              operationName = input.operation
+            ).map(OK -> _).recover {
+              case error: QueryAnalysisError ⇒ BadRequest → error.resolveError
+              case error: ErrorWithResolver ⇒ InternalServerError → error.resolveError
+            }
+            )
 
           // can't parse GraphQL query, return error
-          case Failure(error : SyntaxError) =>
+          case Failure(error: SyntaxError) =>
             throw new QueryException(Json.obj(
               "syntaxError" -> Json.string(error.getMessage),
               "locations" -> Json.array(Json.obj(
                 "line" -> Json.int(error.originalError.position.line),
                 "column" -> Json.int(error.originalError.position.column)))).noSpaces)
 
-          case Failure(error) =>  throw new QueryException(error.getMessage)
+          case Failure(error) => throw new QueryException(error.getMessage)
         }
       }
     } ~
       (path("introspect") & get) {
         // get schema.json for relay apps
-        complete(executor.execute(introspectionQuery) map { introspectedSchema =>
+        complete(executor.execute(introspectionQuery, userContext = userContext, root = ()) map { introspectedSchema =>
           val schemaFilePath = "../data/schema.json"
           val outFile = new java.io.FileWriter(schemaFilePath)
           outFile.write(introspectedSchema.spaces2)

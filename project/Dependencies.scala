@@ -10,9 +10,7 @@ object Dependencies {
 
     val scalatest = "3.0.0-M6"
 
-    val sangriaRelay = "0.5.2"
-
-    val sangriaSprayJson = "0.1.0"
+    val sangriaRelay = "0.6.0"
 
     val sangriaCirce = "0.3.1"
 
@@ -40,8 +38,6 @@ object Dependencies {
 
   val sangriaRelay = libraryDependencies += "org.sangria-graphql" %% "sangria-relay" % Version.sangriaRelay
 
-  val sangriaSprayJson = libraryDependencies += "org.sangria-graphql" %% "sangria-spray-json" % Version.sangriaSprayJson
-
   val sangriaCirceJson = libraryDependencies += "org.sangria-graphql" %% "sangria-circe" % Version.sangriaCirce
 
   val akkaHttp = libraryDependencies += "com.typesafe.akka" %% "akka-http-experimental" % Version.akkHttp
@@ -65,11 +61,6 @@ object Dependencies {
   )
 
   val serverModuleDeps = Seq(sangriaRelay,
-    sangriaCirceJson,
-    circeParseJVM,
-    akkaHttp)
-
-  val mongoServerModuleDeps = Seq(sangriaRelay,
     sangriaCirceJson,
     circeParseJVM,
     reactiveMongo,

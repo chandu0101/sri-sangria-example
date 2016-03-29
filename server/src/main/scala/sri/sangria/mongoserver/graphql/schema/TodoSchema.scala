@@ -1,12 +1,14 @@
-package sri.sangria.server.schema
+package sri.sangria.mongoserver.graphql.schema
 
 import sangria.relay._
 import sangria.schema._
-import sri.sangria.server
-import sri.sangria.server.models.{AddTodoInput, Todo, User}
-import sri.sangria.server.services.TodoRepo
+import sri.sangria.mongoserver.exceptions.MutationException
+import sri.sangria.mongoserver.graphql.TodoRepo
+import sri.sangria.mongoserver.util.CirceUtils
+import sri.sangria.mongoserver.models.{AddTodoInput, Todo, User}
 import sangria.marshalling.circe._
 import io.circe.generic.auto._
+import sangria.macros.derive._
 import scala.concurrent.ExecutionContext.Implicits.global
 
 
@@ -18,7 +20,7 @@ object TodoSchema {
    * The first method is the way we resolve an ID to its object. The second is the
    * way we resolve an object that implements node to its type.
    */
-  val NodeDefinition(nodeInterface, nodeField) = Node.definition((id: GlobalId, ctx: Context[TodoRepo, Unit]) ⇒ {
+  val NodeDefinition(nodeInterface, nodeField): NodeDefinition[TodoRepo,Unit,AnyRef] = Node.definition((id: GlobalId, ctx: Context[TodoRepo, Unit]) => {
     id.typeName match {
       case "User" => ctx.ctx.getUser()
       case "Todo" => ctx.ctx.getTodo(id.id)
@@ -26,23 +28,20 @@ object TodoSchema {
     }
   }, Node.possibleNodeTypes[TodoRepo, Node](UserType, TodoType))
 
+
   def idFields[T: Identifiable] = fields[Unit, T](
     Node.globalIdField,
     Field("rawId", StringType, resolve = ctx ⇒ implicitly[Identifiable[T]].id(ctx.value))
   )
 
 
-  val TodoType: ObjectType[Unit, Todo] = ObjectType(
-    "Todo",
-    "Todo object skeleton",
-    interfaces[Unit, Todo](nodeInterface),
-    fields[Unit, Todo](
-      Node.globalIdField[Unit, Todo],
-      Field("text", StringType, Some("Todo item text"), resolve = _.value.text)
-    )
-  )
+  val TodoType : ObjectType[Unit, Todo]  = deriveObjectType(
+    ObjectTypeDescription("Todo Object"),
+    Interfaces(nodeInterface),
+    AddFields(Node.globalIdField),
+    ExcludeFields("_id"))
 
-  val ConnectionDefinition(todoEdge, todoConnection) = Connection.definition[TodoRepo, Connection, Option[Todo]]("Todo", OptionType(TodoType))
+  val ConnectionDefinition(todoEdge, todoConnection) = Connection.definition[TodoRepo, Connection, Todo]("Todo", TodoType)
 
 
   val UserType: ObjectType[TodoRepo, User] = ObjectType(
@@ -53,7 +52,7 @@ object TodoSchema {
       Node.globalIdField[TodoRepo, User],
       Field("todos", todoConnection,
         arguments = Connection.Args.All,
-        resolve = ctx => Connection.connectionFromFutureSeq(ctx.ctx.getTodos(ctx.value.todos, ctx.args), ConnectionArgs(ctx))
+        resolve = ctx => ctx.ctx.getTodos(ctx)
       )
     )
   )
@@ -72,12 +71,11 @@ object TodoSchema {
     inputFields = List(
       InputField("text", StringType)),
     outputFields = fields(
-      Field("todoEdge", todoEdge, resolve = ctx ⇒ Edge(ctx.ctx.getTodo(ctx.value.todoId), ctx.value.todoId)),
+      Field("todoEdge", todoEdge, resolve = ctx ⇒ ctx.ctx.getTodo(ctx.value.todoId).map(ot => Edge(ot.getOrElse(null), ctx.value.todoId))),
       Field("viewer", OptionType(UserType), resolve = _.ctx.getUser())
     ),
     mutateAndGetPayload = (input, ctx) ⇒ {
-      val newTodo = ctx.ctx.addTodo(input.text)
-      AddTodoMutationPayload(input.clientMutationId.get, newTodo.id)
+      ctx.ctx.addTodo(input.text).map(newTodo => AddTodoMutationPayload(input.clientMutationId.get, newTodo))
     }
   )
 

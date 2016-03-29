@@ -10,12 +10,12 @@ object SriSangria extends Build {
   import Dependencies._
   import LauncherConfigs._
 
-  val Scala211 = "2.11.7"
+  val Scala211 = "2.11.8"
 
   lazy val commonSettings =
     Seq(
       organization := "sri.sangria",
-      version := "0.1.0-SNAPSHOT",
+      version := "0.2.0",
       homepage := Some(url("https://github.com/chandu0101/sri-sangria-example")),
       scalaVersion := Scala211,
       resolvers ++= Seq(
@@ -53,7 +53,7 @@ object SriSangria extends Build {
 
   lazy val root =
     Project("root", file("."))
-      .aggregate(web,mobile, shared.js, shared.jvm, server, serverMongo)
+      .aggregate(web,mobile, shared.js, shared.jvm, server)
 
   // Scala-Js web frontend
   lazy val web =
@@ -70,16 +70,10 @@ object SriSangria extends Build {
       .settings(mobileLauncherFull)
       .dependsOn(sharedJs)
 
-  // Akka Http based backend
+  // Akka Http based backend , mongo as DB
   lazy val server =
     DefProject("server", "server")
       .settings(serverModuleDeps)
-      .dependsOn(sharedJvm)
-
-  // Akka Http based backend , mongo as DB
-  lazy val serverMongo =
-    DefProject("server-mongo", "server-mongo")
-      .settings(mongoServerModuleDeps)
       .dependsOn(sharedJvm)
 
 

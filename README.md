@@ -16,11 +16,7 @@ An example app written using [sangria-graphql](http://sangria-graphql.org/) (bac
 ***Server*** : 
 
 ```
-sbt "project server" ~re-start
-
-      or
-
-sbt "project server-mongo" ~re-start (if you have mongodb installed on u r machine)
+sbt "project server" ~re-start ( make sure you started mongod instance)
      
 ```     
 

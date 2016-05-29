@@ -8,7 +8,7 @@ object Dependencies {
 
     val scalaAsync = "0.9.2"
 
-    val scalatest = "3.0.0-M6"
+    val scalatest = "3.0.0-M15"
 
     val sangriaRelay = "0.6.0"
 
@@ -16,7 +16,7 @@ object Dependencies {
 
     val akkHttp = "2.0"
 
-    val sri = "0.4.0"
+    val sri = "0.5.0"
 
     val reactiveMongo = "0.11.9"
 

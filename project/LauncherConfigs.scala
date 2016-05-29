@@ -4,7 +4,7 @@ import sbt._
 
 object LauncherConfigs {
 
-  /** ================ React_native/mobile task   ================ */
+  /** ================ React_native task   ================ */
 
   val fastOptMobile = Def.taskKey[File]("Generate mobile output file for fastOptJS")
 
@@ -19,9 +19,11 @@ object LauncherConfigs {
 
         IO.copyFile(loaderFile, outFile)
 
-        val fastOutputCode = IO.read((fastOptJS in Compile).value.data)
+        val fullOutputCode = IO.read((fastOptJS in Compile).value.data)
 
-        IO.append(outFile, fastOutputCode)
+        val outString = processRequireFunctionsInFastOpt(fullOutputCode)
+
+        IO.write(baseDirectory.value / "scalajs-output.js", outString)
 
         val launcher = (scalaJSLauncher in Compile).value.data.content
         IO.append(outFile, launcher)
@@ -33,7 +35,7 @@ object LauncherConfigs {
 
   val fullOptMobile = Def.taskKey[File]("Generate the file given to react native")
 
-  lazy val mobileLauncherFull =
+  lazy val mobilelauncherFull =
     Seq(
       artifactPath in Compile in fullOptMobile :=
         baseDirectory.value / "index.ios.js",
@@ -46,7 +48,9 @@ object LauncherConfigs {
 
         val fullOutputCode = IO.read((fullOptJS in Compile).value.data)
 
-        IO.append(outFile, fullOutputCode)
+        val outString = processRequireFunctions(fullOutputCode)
+
+        IO.write(baseDirectory.value / "scalajs-output.js", outString)
 
         val launcher = (scalaJSLauncher in Compile).value.data.content
         IO.append(outFile, launcher)
@@ -55,6 +59,28 @@ object LauncherConfigs {
         outFile
       }
     )
+
+  /**
+   * react-native prod bundler needs require function without name spaces
+   * @param text
+   * @return
+   */
+  def processRequireFunctions(text: String): String = {
+    val SJS_NAME_SPACE = "exportsNamespace:"
+    val i = text.indexOf(SJS_NAME_SPACE) + SJS_NAME_SPACE.length
+    val j = text.substring(i).indexOf(";") + i // TODO look for non valid identifier ![_$0-9a-zA-Z]
+    val nameSpace = text.substring(i,j)
+    text.replaceAll(s"$nameSpace.require\\(", "require\\(")
+  }
+
+  /**
+   * react-native prod bundler needs require function without name spaces
+   * @param text
+   * @return
+   */
+  def processRequireFunctionsInFastOpt(text: String): String = {
+    text.replaceAll("\\$g.require\\(", "require\\(")
+  }
 
   /** *  Web Tasks             ***/
 

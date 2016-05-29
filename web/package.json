@@ -27,10 +27,9 @@
     "webpack-dev-server": "^1.14.1"
   },
   "dependencies": {
-    "history": "^2.0.0",
-    "material-ui": "^0.14.4",
-    "react": "^0.14.6",
-    "react-dom": "^0.14.6",
+    "history": "^3.0.0-2",
+    "react": "^15.0.2",
+    "react-dom": "^15.0.2",
     "react-relay": "^0.7.1",
     "react-tap-event-plugin": "^0.2.2",
     "react-web": "^0.2.3"
